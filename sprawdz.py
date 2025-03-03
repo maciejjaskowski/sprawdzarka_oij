@@ -3,6 +3,7 @@ import os
 import sys
 import subprocess
 import time
+import argparse
 
 def normalize_output(text):
     """
@@ -26,13 +27,14 @@ def normalize_output(text):
     # Join back with newlines
     return '\n'.join(lines)
 
-def run_tests(python_script, test_dir):
+def run_tests(python_script, test_dir, timeout=10):
     """
     Run tests for a Python script against input/output pairs in a directory.
     
     Args:
         python_script: Path to Python script to test
         test_dir: Directory containing .in and .out test files
+        timeout: Timeout in seconds for each test (default: 10)
     """
     # Check if script exists
     if not os.path.isfile(python_script):
@@ -76,7 +78,7 @@ def run_tests(python_script, test_dir):
                     stdin=input_file,
                     capture_output=True,
                     text=True,
-                    timeout=10  # 10 second timeout to prevent infinite loops
+                    timeout=timeout  # Use the provided timeout value
                 )
                 execution_time = time.time() - start_time
                 
@@ -96,9 +98,9 @@ def run_tests(python_script, test_dir):
                 times.append(execution_time)
                 
             except subprocess.TimeoutExpired:
-                print(f"Test {in_file} timed out (>10s)")
+                print(f"Test {in_file} timed out (>{timeout}s)")
                 results.append('T')  # T for timeout
-                times.append(10.0)
+                times.append(timeout)
             except Exception as e:
                 print(f"Error running test {in_file}: {e}")
                 results.append('E')  # E for error
@@ -116,14 +118,16 @@ def run_tests(python_script, test_dir):
     print(f"\nSummary: {successful}/{total} tests passed")
 
 def main():
-    if len(sys.argv) != 3:
-        print("Usage: python sprawdz.py <python_script> <test_directory>")
-        sys.exit(1)
+    # Set up command line argument parsing
+    parser = argparse.ArgumentParser(description='Test a Python script against input/output test cases')
+    parser.add_argument('script', help='Path to the Python script to test')
+    parser.add_argument('testdir', help='Directory containing test cases (.in and .out files)')
+    parser.add_argument('-t', '--timeout', type=float, default=10, 
+                        help='Timeout in seconds for each test (default: 10)')
     
-    python_script = sys.argv[1]
-    test_dir = sys.argv[2]
+    args = parser.parse_args()
     
-    run_tests(python_script, test_dir)
+    run_tests(args.script, args.testdir, args.timeout)
 
 if __name__ == "__main__":
     main()
