@@ -53,6 +53,9 @@ def run_tests(python_script, test_dir, timeout=10):
     results = []
     times = []
     
+    # Print initial message
+    print(f"Running tests from {test_dir} with timeout {timeout}s:")
+    
     # Process each test case
     for in_file in in_files:
         base_name = in_file[:-3]  # Remove .in extension
@@ -91,23 +94,29 @@ def run_tests(python_script, test_dir, timeout=10):
                 expected_output = normalize_output(expected_output)
                 
                 if actual_output == expected_output:
-                    results.append('.')
+                    result = '.'
                 else:
-                    results.append('X')
+                    result = 'X'
                 
+                # Print result immediately
+                print(result, end='', flush=True)
+                
+                results.append(result)
                 times.append(execution_time)
                 
             except subprocess.TimeoutExpired:
-                print(f"Test {in_file} timed out (>{timeout}s)")
-                results.append('T')  # T for timeout
+                print('T', end='', flush=True)  # T for timeout, print immediately
+                results.append('T')
                 times.append(timeout)
             except Exception as e:
-                print(f"Error running test {in_file}: {e}")
-                results.append('E')  # E for error
+                print('E', end='', flush=True)  # E for error, print immediately
+                results.append('E')
                 times.append(0.0)
     
-    # Print results
-    print(''.join(results))
+    # Print a newline after all test results
+    print()
+    
+    # Print execution times
     print("\nExecution times:")
     for i, (in_file, t) in enumerate(zip(in_files, times)):
         print(f"{in_file}: {t:.3f}s - {'PASS' if results[i] == '.' else 'FAIL'}")
